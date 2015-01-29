@@ -1,3 +1,4 @@
+import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -6,8 +7,10 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.svm import SVC
 from sklearn import cross_validation
 
-from pybrain.tools.shortcuts import buildNetwork
+from pybrain.datasets import ClassificationDataSet
+from pybrain.structure import TanhLayer
 from pybrain.supervised.trainers import BackpropTrainer
+from pybrain.tools.shortcuts import buildNetwork
 
 data_file = "actedData.csv"
 
@@ -15,8 +18,20 @@ def load_data(location):
 	data_frame = pd.read_csv(location)
 	return data_frame
 
-def ann_experiment():
-	net = buildNetwork(2, 3, 1, bias=True, hiddenclass=TanhLayer)
+def ann_experiment(df):
+	classes = set(df.values[:,3])
+	target_dict = dict(itertools.izip(classes,range(len(classes))))
+
+	ds = ClassificationDataSet(len(df.columns)-4, class_labels=classes)
+	for i in range(len(df)):
+		ds.appendLinked(df.values[i,4::], target_dict[df.values[i,3]])
+
+	ds._convertToOneOfMany()
+	net = buildNetwork(len(df.columns)-4, len(df.columns), len(classes), bias=True, hiddenclass=TanhLayer)
+
+	trainer = BackpropTrainer(net, ds)
+	print trainer.train()
+	print "Finished training Neural Network"
 	return 0
 
 def svm_experiment(df):
@@ -46,6 +61,7 @@ def svm_experiment(df):
 def main():
 	df = load_data(data_file)
 	svm_experiment(df)
+	ann_experiment(df)
 
 if __name__ == '__main__':
 	main()
