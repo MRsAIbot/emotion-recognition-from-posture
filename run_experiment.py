@@ -12,31 +12,32 @@ from pybrain.structure import TanhLayer
 from pybrain.supervised.trainers import BackpropTrainer
 from pybrain.tools.shortcuts import buildNetwork
 
-data_file = "actedData.csv"
+data_file1 = "actedData.csv"
+data_file2 = "nonActedData.csv"
 
 def load_data(location):
 	data_frame = pd.read_csv(location)
 	return data_frame
 
-def ann_experiment(df):
-	classes = set(df.values[:,3])
+def ann_experiment(df, target_ind):
+	classes = set(df.values[:,target_ind])
 	target_dict = dict(itertools.izip(classes,range(len(classes))))
 
-	ds = ClassificationDataSet(len(df.columns)-4, class_labels=classes)
+	ds = ClassificationDataSet(len(df.columns)-(target_ind+1), class_labels=classes)
 	for i in range(len(df)):
-		ds.appendLinked(df.values[i,4::], target_dict[df.values[i,3]])
+		ds.appendLinked(df.values[i,target_ind+1::], target_dict[df.values[i,target_ind]])
 
 	ds._convertToOneOfMany()
-	net = buildNetwork(len(df.columns)-4, len(df.columns), len(classes), bias=True, hiddenclass=TanhLayer)
+	net = buildNetwork(len(df.columns)-(target_ind+1), len(df.columns), len(classes), bias=True, hiddenclass=TanhLayer)
 
 	trainer = BackpropTrainer(net, ds)
-	print trainer.train()
+	print trainer.trainUntilConvergence(maxEpochs=10)
 	print "Finished training Neural Network"
 	return 0
 
-def svm_experiment(df):
-	X = df.values[:,4::].astype('float32')
-	Y = df.values[:,3]
+def svm_experiment(df, target_ind):
+	X = df.values[:,target_ind+1::].astype('float32')
+	Y = df.values[:,target_ind]
 
 	# Split the dataset in train and test sets
 	X_train, X_test, Y_train, Y_test = cross_validation.train_test_split(
@@ -59,9 +60,13 @@ def svm_experiment(df):
 	return 0
 
 def main():
-	df = load_data(data_file)
-	svm_experiment(df)
-	ann_experiment(df)
+	df1 = load_data(data_file1)
+	svm_experiment(df1,3)
+	ann_experiment(df1,3)
+
+	df2 = load_data(data_file2)
+	svm_experiment(df2,1)
+	ann_experiment(df2,1)
 
 if __name__ == '__main__':
 	main()
