@@ -14,6 +14,7 @@ from pybrain.tools.shortcuts import buildNetwork
 
 data_file1 = "actedData.csv"
 data_file2 = "nonActedData.csv"
+data_file3 = ""
 
 def load_data(location):
 	data_frame = pd.read_csv(location)
