@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.grid_search import GridSearchCV
+from sklearn.metrics import confusion_matrix
 from sklearn.svm import SVC
 from sklearn import cross_validation
 
@@ -15,6 +16,16 @@ from pybrain.tools.shortcuts import buildNetwork
 data_file1 = "actedData.csv"
 data_file2 = "nonActedData.csv"
 data_file3 = ""
+
+def plot_confustion_matrix(cm):
+	plt.matshow(cm)
+	plt.title('Confusion matrix')
+	plt.colorbar()
+	plt.ylabel('True label')
+	plt.xlabel('Predicted label')
+	plt.show()
+
+	return 0
 
 def load_data(location):
 	data_frame = pd.read_csv(location)
@@ -36,13 +47,13 @@ def ann_experiment(df, target_ind):
 	print "Finished training Neural Network"
 	return 0
 
-def svm_experiment(df, target_ind):
+def svm_experiment(df, target_ind, plot_cm=False):
 	X = df.values[:,target_ind+1::].astype('float32')
 	Y = df.values[:,target_ind]
 
 	# Split the dataset in train and test sets
 	X_train, X_test, Y_train, Y_test = cross_validation.train_test_split(
-		X, Y, test_size=0.4, random_state=0)
+		X, Y, test_size=0.25, random_state=0)
 
 	# Do grid search CV to find the best parameters for c and gamma
 	c_range = 10.0 ** np.arange(-2,9)
@@ -58,16 +69,24 @@ def svm_experiment(df, target_ind):
 	clf_rbf.fit(X_train,Y_train)
 	print "Test error without proper parameter search: {0}".format(clf_rbf.score(X_test,Y_test))
 
+	# Compute Confusion Matrix
+	Y_pred = clf_rbf.predict(X_test)
+	cm = confusion_matrix(Y_test,Y_pred)
+	print(cm)
+
+	if plot_cm:
+		plot_confustion_matrix(cm)
+
 	return 0
 
 def main():
 	df1 = load_data(data_file1)
-	svm_experiment(df1,3)
-	ann_experiment(df1,3)
+	svm_experiment(df1,3,plot_cm=True)
+	# ann_experiment(df1,3)
 
-	df2 = load_data(data_file2)
-	svm_experiment(df2,1)
-	ann_experiment(df2,1)
+	# df2 = load_data(data_file2)
+	# svm_experiment(df2,1)
+	# ann_experiment(df2,1)
 
 if __name__ == '__main__':
 	main()
